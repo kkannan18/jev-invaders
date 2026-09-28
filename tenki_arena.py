@@ -63,7 +63,7 @@ def run_job(kind, seed, thr, args):
         flags += f" --model {args.baseline_model} --provider {args.provider}"
     t0 = time.time()
     with Sandbox.create(name=f"jev-invaders-{kind}-s{seed}-t{thr}", cpu_cores=2, memory_mb=2048,
-                        allow_domains=PYPI + EGRESS[kind], max_duration=3 * 3600,
+                        allow_domains=(PYPI + EGRESS[kind]) if args.lockdown else None, max_duration=3 * 3600,
                         tags=["jev-bakeoff", kind]) as sb:
         sb.exec("mkdir", "-p", "invaders", timeout=30)
         for f in SHIP:
@@ -107,6 +107,7 @@ def main():
     ap.add_argument("--notes", default="")
     ap.add_argument("--no-push", action="store_true")
     ap.add_argument("--verbose", action="store_true")
+    ap.add_argument("--lockdown", action="store_true", help="restrict sandbox egress to PyPI + the one model API")
     args = ap.parse_args()
 
     jobs = []
