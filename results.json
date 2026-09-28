@@ -6,6 +6,14 @@
       "provider": "none",
       "requested_model": "scripted-policy",
       "served_model": "scripted-policy"
+    },
+    {
+      "role": "baseline",
+      "provider": "anthropic",
+      "requested_model": "claude-haiku-4-5",
+      "served_model": "claude-haiku-4-5",
+      "sdk_package": "system-one-adapter",
+      "sdk_version": "0.2.1"
     }
   ],
   "config": {
@@ -90,7 +98,44 @@
     }
   ],
   "baseline": {
-    "model": null,
-    "runs": []
+    "model": "claude-haiku-4-5",
+    "runs": [
+      {
+        "seed": 1,
+        "score": 110,
+        "steps": 491,
+        "frames": 1961,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 490,
+        "input_tokens": 644405,
+        "output_tokens": 26871,
+        "latency_ms_p50": 1055,
+        "latency_ms_p95": 1692,
+        "latency_ms_total": 601306,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 610.7,
+        "served_model": "claude-haiku-4-5",
+        "action_counts": {
+          "NOOP": 233,
+          "FIRE": 70,
+          "RIGHT": 1,
+          "LEFT": 114,
+          "RIGHTFIRE": 72,
+          "LEFTFIRE": 0
+        },
+        "mode": "turn_based",
+        "conf_threshold": 0.0,
+        "mean_confidence": 0.852,
+        "low_conf_rate": 0.0,
+        "cost_usd": 0.7788,
+        "tenki_sandbox_id": "01a0ea41-544f-7eae-b007-116b93a00054",
+        "sandbox_wall_clock_s": 632.3,
+        "notes": "Tenki sandbox 01a0ea41-544f-7eae-b007-116b93a00054; conf gate 0.0"
+      }
+    ]
   }
 }
