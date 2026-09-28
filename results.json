@@ -54,6 +54,39 @@
       "mode": "turn_based",
       "conf_threshold": 0.0,
       "notes": "Harness check on the Mac: scripted policy, no model"
+    },
+    {
+      "seed": 2,
+      "score": 330,
+      "steps": 650,
+      "frames": 2599,
+      "lives_lost": 3,
+      "terminated": true,
+      "truncated": false,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "latency_ms_p50": 0,
+      "latency_ms_p95": 0,
+      "latency_ms_total": 1,
+      "errors_by_status": {},
+      "retries": 0,
+      "fallback_actions": 0,
+      "wall_clock_s": 6.1,
+      "served_model": "scripted-policy",
+      "action_counts": {
+        "NOOP": 294,
+        "FIRE": 28,
+        "RIGHT": 172,
+        "LEFT": 54,
+        "RIGHTFIRE": 41,
+        "LEFTFIRE": 60
+      },
+      "mode": "turn_based",
+      "conf_threshold": 0.0,
+      "tenki_sandbox_id": "01a0ea13-4af6-7711-8741-c0d9b0d8ad16",
+      "sandbox_wall_clock_s": 29.9,
+      "notes": "Tenki sandbox 01a0ea13-4af6-7711-8741-c0d9b0d8ad16; conf gate 0.0"
     }
   ],
   "baseline": {
