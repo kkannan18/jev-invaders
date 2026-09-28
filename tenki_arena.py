@@ -65,6 +65,7 @@ def run_job(kind, seed, thr, args):
     with Sandbox.create(name=f"jev-invaders-{kind}-s{seed}-t{thr}", cpu_cores=2, memory_mb=2048,
                         allow_domains=PYPI + EGRESS[kind], max_duration=3 * 3600,
                         tags=["jev-bakeoff", kind]) as sb:
+        sb.exec("mkdir", "-p", "invaders", timeout=30)
         for f in SHIP:
             sb.fs.write_text(f, (ROOT / f).read_text())
         sb.exec("bash", "-lc", "python3 -m pip install -q -r requirements.txt 2>&1 | tail -3",
