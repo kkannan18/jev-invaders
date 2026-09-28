@@ -1,0 +1,7 @@
+gymnasium==1.3.0
+ale-py==0.12.1
+numpy>=1.26
+scipy>=1.11
+typesafe-sdk==0.7.2
+system-one-adapter[anthropic]==0.2.1
+tenki==1.3.0
