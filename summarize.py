@@ -73,7 +73,8 @@ def build(path="results.json"):
             gate[r.get("conf_threshold") or 0.0].append(r)
     rt = d.get("realtime_showdown", {})
     rj_all, rb = rt.get("jev", []), rt.get("baseline", [])
-    rj = [r for r in rj_all if r.get("policy", "argmax") == "argmax" and not r.get("latency_tax_ms")]
+    rj = [r for r in rj_all if r.get("policy", "argmax") == "argmax" and not r.get("latency_tax_ms")
+          and not r.get("conf_threshold")]
     rj_tax = [r for r in rj_all if r.get("latency_tax_ms")]
     rj_axes = [r for r in rj_all if r.get("policy") == "axes"]
     J, B = agg(jev), agg(base)

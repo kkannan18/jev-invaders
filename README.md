@@ -102,6 +102,31 @@ race on your own machine.
   Tenki had no capacity, later games ran locally with the same code; each run
   records where it ran.
 
+## How Mitosis Labs is used: a coach with memory
+
+`mitosis_coach.py` puts JEV in charge of its own training plan, with Cortex as
+its memory. Each round:
+
+1. **Recall.** Cortex returns the remembered games most relevant to "which JEV
+   strategy scored the most in real time?", each with its Cortex id.
+2. **Decide.** JEV answers a typed `choice` question, which strategy should play
+   the next game, with those memories as its state. It returns a pick, a
+   probability for every strategy, and a confidence.
+3. **Play.** The chosen strategy plays the next seed in real time inside a
+   Tenki sandbox.
+4. **Remember.** The result, and the decision behind it, are written back to
+   Cortex. The run in `results.json` carries a `coach` block with the pick, the
+   probabilities and the Cortex ids it relied on.
+
+```bash
+export MI_API_KEY=mi_... MI_OFFICE=<your office id>
+python mitosis_coach.py --seed-memory                 # load every past JEV game into Cortex
+python mitosis_coach.py --rounds 5 --first-seed 11    # five coached games
+```
+
+Without Cortex the coach forgets everything between runs; without Tenki it has
+no games to play.
+
 ## Reproduce
 
 Python 3.10+.
@@ -179,6 +204,7 @@ before the next game is recorded.
 | `live_play.py` | One live player: real-time game plus spectator view over HTTP |
 | `live_race.py` | Two live players in Tenki sandboxes, split-screen page, results pushed |
 | `summarize.py` | The scoreboard, recomputed from `results.json` |
+| `mitosis_coach.py` | JEV chooses the next strategy from Cortex memory; games run in Tenki |
 | `ci_replay.py` | CI check: replay reference games in Tenki and compare scores |
 
 ## Rules compliance
