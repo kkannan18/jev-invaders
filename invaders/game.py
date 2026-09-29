@@ -67,7 +67,8 @@ def play(decider, seed: int, max_steps: int | None = None, conf_threshold: float
             score += r
             steps += 1
             if on_step:
-                on_step(steps, score, info, last_action)
+                on_step(steps, score, info, last_action, frames[-1],
+                        {"calls": calls, "stale": stale, "lat": lat[-1] if lat else None})
             if log_every and steps % log_every == 0:
                 print(f"  step {steps} score {int(score)} lives {info['lives']} p50 {_pct(lat, 50)}ms", flush=True)
     else:
@@ -99,7 +100,8 @@ def play(decider, seed: int, max_steps: int | None = None, conf_threshold: float
             with lock:
                 box["state"] = enc.encode(frames, info["lives"], score, steps)
             if on_step:
-                on_step(steps, score, info, last_action)
+                on_step(steps, score, info, last_action, frames[-1],
+                        {"calls": calls, "stale": stale, "lat": lat[-1] if lat else None})
             next_t += 1 / STEP_HZ
             time.sleep(max(0.0, next_t - time.perf_counter()))
         box["stop"] = True

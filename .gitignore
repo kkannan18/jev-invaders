@@ -4,3 +4,5 @@ __pycache__/
 out.jsonl
 game.log
 .venv/
+live_*.jsonl
+race.html

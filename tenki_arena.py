@@ -48,7 +48,22 @@ def meta(kind, model=None, provider="anthropic"):
                            sdk_package=None, sdk_version=None)
 
 
-def run_job(kind, seed, thr, args):
+def run_job(kind, seed, thr, args, tries=4):
+    """Retry sandbox placement/capacity errors with backoff; game errors are not retried."""
+    for attempt in range(tries):
+        try:
+            return _run_job(kind, seed, thr, args)
+        except Exception as exc:  # noqa: BLE001
+            msg = str(exc)
+            transient = "capacity" in msg or "concurrent jobs" in msg or "placement" in msg
+            if not transient or attempt == tries - 1:
+                raise
+            wait = 20 * (attempt + 1)
+            print(f"  [{kind} s{seed} t{thr}] Tenki busy ({msg[:60]}...), retrying in {wait}s", flush=True)
+            time.sleep(wait)
+
+
+def _run_job(kind, seed, thr, args):
     from tenki import Sandbox
 
     env = {k: os.environ[k] for k in KEYS[kind] if os.environ.get(k)}
@@ -103,7 +118,7 @@ def main():
     ap.add_argument("--model", default=None, help="JEV model id")
     ap.add_argument("--baseline-model", default=None)
     ap.add_argument("--provider", default="anthropic")
-    ap.add_argument("--parallel", type=int, default=16)
+    ap.add_argument("--parallel", type=int, default=5, help="concurrent sandboxes (the Tenki free workspace allows 5)")
     ap.add_argument("--notes", default="")
     ap.add_argument("--no-push", action="store_true")
     ap.add_argument("--verbose", action="store_true")
