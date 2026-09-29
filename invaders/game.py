@@ -32,6 +32,7 @@ def play(decider, seed: int, max_steps: int | None = None, conf_threshold: float
     calls = in_tok = out_tok = retries = fallbacks = stale = 0
     errors: dict[str, int] = {}
     served = None
+    live_conf = {"conf": None, "probs": None}
     t_start = time.perf_counter()
     actions_hist = [0] * len(ACTIONS)
 
@@ -53,6 +54,7 @@ def play(decider, seed: int, max_steps: int | None = None, conf_threshold: float
             return
         if d.confidence is not None:
             confs.append(d.confidence)
+            live_conf["conf"] = d.confidence
             if d.confidence < conf_threshold:
                 low_conf += 1  # not sure: hold the last action instead
                 return
@@ -68,7 +70,7 @@ def play(decider, seed: int, max_steps: int | None = None, conf_threshold: float
             steps += 1
             if on_step:
                 on_step(steps, score, info, last_action, frames[-1],
-                        {"calls": calls, "stale": stale, "lat": lat[-1] if lat else None})
+                        {"calls": calls, "stale": stale, "lat": lat[-1] if lat else None, "conf": live_conf["conf"]})
             if log_every and steps % log_every == 0:
                 print(f"  step {steps} score {int(score)} lives {info['lives']} p50 {_pct(lat, 50)}ms", flush=True)
     else:
@@ -101,7 +103,7 @@ def play(decider, seed: int, max_steps: int | None = None, conf_threshold: float
                 box["state"] = enc.encode(frames, info["lives"], score, steps)
             if on_step:
                 on_step(steps, score, info, last_action, frames[-1],
-                        {"calls": calls, "stale": stale, "lat": lat[-1] if lat else None})
+                        {"calls": calls, "stale": stale, "lat": lat[-1] if lat else None, "conf": live_conf["conf"]})
             next_t += 1 / STEP_HZ
             time.sleep(max(0.0, next_t - time.perf_counter()))
         box["stop"] = True
@@ -130,6 +132,8 @@ def play(decider, seed: int, max_steps: int | None = None, conf_threshold: float
         "action_counts": dict(zip(ACTIONS, actions_hist)),
         "mode": "realtime_15hz" if realtime else "turn_based",
         "conf_threshold": conf_threshold,
+        "policy": getattr(decider, "policy", "argmax"),
+        "latency_tax_ms": getattr(decider, "latency_tax_ms", 0),
     }
     if confs:
         run["mean_confidence"] = round(float(np.mean(confs)), 3)

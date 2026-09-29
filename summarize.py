@@ -64,19 +64,26 @@ def head_to_head(a, b):
 def build(path="results.json"):
     d = json.loads(Path(path).read_text())
     jev_all = [r for r in d["runs"] if str(r.get("served_model", "")).startswith("jev")]
-    jev = [r for r in jev_all if not r.get("conf_threshold")]
+    jev = [r for r in jev_all if not r.get("conf_threshold") and r.get("policy", "argmax") == "argmax"]
+    axes = [r for r in jev_all if r.get("policy") == "axes"]
     base = d["baseline"]["runs"]
     gate = defaultdict(list)
     for r in jev_all:
-        gate[r.get("conf_threshold") or 0.0].append(r)
+        if r.get("policy", "argmax") == "argmax":
+            gate[r.get("conf_threshold") or 0.0].append(r)
     rt = d.get("realtime_showdown", {})
-    rj, rb = rt.get("jev", []), rt.get("baseline", [])
+    rj_all, rb = rt.get("jev", []), rt.get("baseline", [])
+    rj = [r for r in rj_all if r.get("policy", "argmax") == "argmax" and not r.get("latency_tax_ms")]
+    rj_tax = [r for r in rj_all if r.get("latency_tax_ms")]
+    rj_axes = [r for r in rj_all if r.get("policy") == "axes"]
     J, B = agg(jev), agg(base)
     out = {
         "models": {m["role"] + ":" + m.get("requested_model", ""): m.get("served_model") for m in d["models"]},
         "turn_based": {"jev": J, "baseline": B, "head_to_head": head_to_head(jev, base)},
         "realtime": {"jev": agg(rj), "baseline": agg(rb), "head_to_head": head_to_head(rj, rb)},
         "confidence_gate": {str(t): agg(v) for t, v in sorted(gate.items())},
+        "latency_tax": agg(rj_tax),
+        "axes_policy": {"turn_based": agg(axes), "realtime": agg(rj_axes)},
     }
     if J and B:
         out["ratios"] = {
@@ -127,6 +134,16 @@ def main():
         table("CONFIDENCE GATE (hold the last move when JEV's confidence is below the threshold)",
               [[t, v["games"], v["mean_score"], v.get("mean_confidence")] for t, v in g.items()],
               ["threshold", "games", "mean score", "mean confidence"])
+    if s["latency_tax"]:
+        T, RJ = s["latency_tax"], s["realtime"]["jev"]
+        table("LATENCY-TAX CONTROL (real-time JEV with a delay added to match the LLM's speed)",
+              [["JEV", RJ["games"], RJ["mean_score"], RJ["latency_ms_p50"]],
+               ["JEV + delay", T["games"], T["mean_score"], T["latency_ms_p50"]]],
+              ["decider", "games", "mean score", "p50 ms"])
+    ax = s["axes_policy"]
+    if ax["turn_based"] or ax["realtime"]:
+        rows = [[m, v["games"], v["mean_score"]] for m, v in (("turn-based", ax["turn_based"]), ("real-time", ax["realtime"])) if v]
+        table("AXES POLICY (JEV's probabilities summed into move and fire axes)", rows, ["mode", "games", "mean score"])
     print(f"\nJEV is {ra.get('speedup_p50')}x faster per decision (median) and "
           f"{ra.get('cost_per_decision_ratio')}x cheaper per decision; "
           f"mean score {ra.get('score_ratio')}x turn-based, {ra.get('realtime_score_ratio')}x real-time.")

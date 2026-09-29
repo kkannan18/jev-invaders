@@ -25,6 +25,10 @@ def main():
     ap.add_argument("--max-steps", type=int, default=None, help="cap each game (recorded as config.max_steps)")
     ap.add_argument("--conf-threshold", type=float, default=0.0, help="hold last action when confidence is below this")
     ap.add_argument("--realtime", action="store_true", help="run the game at real Atari speed (15 decisions/s max)")
+    ap.add_argument("--policy", choices=["argmax", "axes"], default="argmax",
+                    help="axes: sum the returned probabilities into move and fire axes")
+    ap.add_argument("--latency-tax-ms", type=int, default=0,
+                    help="control experiment: add this delay to every JEV answer (e.g. 1050 = Claude's median)")
     ap.add_argument("--notes", default="")
     ap.add_argument("--no-push", action="store_true", help="write results.json but do not commit/push")
     ap.add_argument("--no-record", action="store_true", help="do not touch results.json")
@@ -33,7 +37,8 @@ def main():
     a = ap.parse_args()
 
     for seed in a.seeds:
-        decider = make_decider(a.decider, model=a.model, provider=a.provider, seed=seed)
+        decider = make_decider(a.decider, model=a.model, provider=a.provider, seed=seed, policy=a.policy,
+                               latency_tax_ms=a.latency_tax_ms)
         print(f"== {a.decider} seed {seed} ({'realtime' if a.realtime else 'turn-based'})", flush=True)
         run = play(decider, seed, a.max_steps, a.conf_threshold, a.realtime, a.log_every)
         print(json.dumps({k: run[k] for k in ("seed", "score", "steps", "lives_lost", "model_calls",

@@ -53,6 +53,23 @@ good (firing while drifting left vs. just drifting left), so a low-confidence
 answer is usually still a reasonable one, and freezing on it costs more. The shipped pilot trusts every answer. Those runs are in
 `results.json` with `conf_threshold` and a note on each.
 
+## Using the typed answer, not just the top pick
+
+- **Live confidence.** The race page shows JEV's chosen move and its confidence
+  on every frame, next to the game.
+- **Axes steering** (`--policy axes`). JEV returns a probability for each of the
+  six moves. Axes steering sums them along two axes, where to move and whether
+  to fire, so a split vote between LEFT and LEFTFIRE still moves left.
+- **Latency-tax control** (`--latency-tax-ms 1050`). The same JEV, with a delay
+  added to every answer so it is as slow as Claude's median. If its real-time
+  score falls toward Claude's, speed is what wins the game.
+
+```bash
+python tenki_arena.py --deciders jev --seeds 1 2 3 4 5 --realtime --latency-tax-ms 1050
+python tenki_arena.py --deciders jev --seeds 1 2 3 4 5 --realtime --policy axes
+python summarize.py   # adds LATENCY-TAX CONTROL and AXES POLICY tables once those runs exist
+```
+
 ## Watch it: the live race
 
 ```bash
@@ -77,6 +94,10 @@ race on your own machine.
   confidence-threshold jobs (5 at a time on the free workspace), retries when
   Tenki is out of capacity, and pushes each game the moment it finishes. The
   sandbox id is stored on each run as `tenki_sandbox_id`.
+- **CI replay on every push.** `.github/workflows/tenki-replay.yml` runs
+  `ci_replay.py`, which replays reference games in fresh Tenki sandboxes, checks
+  the scores reproduce exactly, and posts a table on the commit. Add
+  `TENKI_API_KEY` as a repository secret to enable it.
 - The turn-based results, and the first real-time seeds, ran in Tenki. When
   Tenki had no capacity, later games ran locally with the same code; each run
   records where it ran.
@@ -158,6 +179,7 @@ before the next game is recorded.
 | `live_play.py` | One live player: real-time game plus spectator view over HTTP |
 | `live_race.py` | Two live players in Tenki sandboxes, split-screen page, results pushed |
 | `summarize.py` | The scoreboard, recomputed from `results.json` |
+| `ci_replay.py` | CI check: replay reference games in Tenki and compare scores |
 
 ## Rules compliance
 

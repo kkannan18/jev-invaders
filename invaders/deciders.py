@@ -62,6 +62,21 @@ class Decision:
     failed: bool = False  # no answer came back; the harness falls back
 
 
+def axes_action(probs: dict) -> str:
+    """Decompose the six-way distribution into two axes: where to move and whether to fire.
+
+    JEV's probability mass is often split between twin actions (LEFT vs LEFTFIRE).
+    Summing along each axis keeps both votes instead of throwing one away.
+    """
+    p = {a: float(probs.get(a, 0.0)) for a in ACTIONS}
+    move = {"LEFT": p["LEFT"] + p["LEFTFIRE"], "RIGHT": p["RIGHT"] + p["RIGHTFIRE"], "STAY": p["NOOP"] + p["FIRE"]}
+    fire = p["FIRE"] + p["LEFTFIRE"] + p["RIGHTFIRE"]
+    m = max(move, key=move.get)
+    if m == "STAY":
+        return "FIRE" if fire > 0.5 else "NOOP"
+    return m + "FIRE" if fire > 0.5 else m
+
+
 def question():
     return {"move": {"type": "choice", "instructions": INSTRUCTIONS, "criteria": CRITERIA}}
 
@@ -74,6 +89,8 @@ def _status_of(exc) -> str:
 class _Remote:
     provider = "?"
     requested_model = "?"
+    policy = "argmax"  # or "axes": see axes_action
+    latency_tax_ms = 0  # control experiment: add a fixed delay to every answer
 
     def cost(self, itok, otok):
         p = PRICES.get(self.requested_model)
@@ -87,7 +104,11 @@ class _Remote:
         t0 = time.perf_counter()
         for attempt in range(MAX_RETRIES + 1):
             try:
-                choice, conf, itok, otok, served = self._call(state)
+                choice, conf, itok, otok, served, probs = self._call(state)
+                if self.latency_tax_ms:
+                    time.sleep(self.latency_tax_ms / 1000)
+                if self.policy == "axes" and probs:
+                    choice = axes_action(probs)
                 return Decision(ACTIONS.index(choice), conf, (time.perf_counter() - t0) * 1000, True,
                                 itok or 0, otok or 0, served, errors, retries)
             except Exception as exc:  # noqa: BLE001 - counted, then retried or fallen back
@@ -119,7 +140,8 @@ class JEVDecider(_Remote):
     def _call(self, state):
         r = self.client.system_one(state, question())
         a = r.answers["move"]
-        return a.choice, a.confidence, r.usage.input_tokens, r.usage.output_tokens, r.model
+        return (a.choice, a.confidence, r.usage.input_tokens, r.usage.output_tokens, r.model,
+                getattr(a, "probabilities", None))
 
 
 class LLMDecider(_Remote):
@@ -145,7 +167,8 @@ class LLMDecider(_Remote):
             served = (att.get("debug_info") or {}).get("model") or served
             if served:
                 break
-        return a.choice, a.confidence, itok, otok, served or self.requested_model
+        return (a.choice, a.confidence, itok, otok, served or self.requested_model,
+                getattr(a, "probabilities", None))
 
 
 
@@ -188,9 +211,14 @@ class ScriptedDecider:
 
 def make_decider(kind: str, **kw):
     if kind == "jev":
-        return JEVDecider(kw.get("model") or os.environ.get("JEV_MODEL", "jev-latest"))
+        d = JEVDecider(kw.get("model") or os.environ.get("JEV_MODEL", "jev-latest"))
+        d.policy = kw.get("policy") or "argmax"
+        d.latency_tax_ms = kw.get("latency_tax_ms") or 0
+        return d
     if kind == "baseline":
-        return LLMDecider(kw.get("provider") or "anthropic", kw.get("model") or "claude-haiku-4-5")
+        d = LLMDecider(kw.get("provider") or "anthropic", kw.get("model") or "claude-haiku-4-5")
+        d.policy = kw.get("policy") or "argmax"
+        return d
     if kind == "random":
         return RandomDecider(kw.get("seed", 0))
     if kind == "scripted":

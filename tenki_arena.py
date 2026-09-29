@@ -72,6 +72,10 @@ def _run_job(kind, seed, thr, args):
         flags += f" --max-steps {args.max_steps}"
     if args.realtime:
         flags += " --realtime"
+    if args.policy != "argmax":
+        flags += f" --policy {args.policy}"
+    if args.latency_tax_ms and kind == "jev":
+        flags += f" --latency-tax-ms {args.latency_tax_ms}"
     if args.model and kind == "jev":
         flags += f" --model {args.model}"
     if args.baseline_model and kind == "baseline":
@@ -119,6 +123,8 @@ def main():
     ap.add_argument("--baseline-model", default=None)
     ap.add_argument("--provider", default="anthropic")
     ap.add_argument("--parallel", type=int, default=5, help="concurrent sandboxes (the Tenki free workspace allows 5)")
+    ap.add_argument("--policy", choices=["argmax", "axes"], default="argmax")
+    ap.add_argument("--latency-tax-ms", type=int, default=0, help="add this delay to every JEV answer (control)")
     ap.add_argument("--notes", default="")
     ap.add_argument("--no-push", action="store_true")
     ap.add_argument("--verbose", action="store_true")
@@ -140,7 +146,9 @@ def main():
             except Exception as exc:  # noqa: BLE001
                 print(f"!! {kind} seed {seed} thr {thr} failed: {exc}", flush=True)
                 continue
-            note = args.notes or f"Tenki sandbox {run['tenki_sandbox_id']}; conf gate {thr}"
+            note = args.notes or (f"Tenki sandbox {run['tenki_sandbox_id']}; conf gate {thr}"
+                                  + (f"; policy {args.policy}" if args.policy != "argmax" else "")
+                                  + (f"; latency tax {args.latency_tax_ms} ms" if args.latency_tax_ms and kind == "jev" else ""))
             n = record(run, meta(kind, args.model if kind == "jev" else args.baseline_model, args.provider),
                        note, args.max_steps, push=not args.no_push)
             if kind == "jev":

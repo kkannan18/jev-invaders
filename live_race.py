@@ -53,6 +53,9 @@ h1{font:700 clamp(22px,4vw,34px)/1.1 Silkscreen,monospace;margin:0 0 4px;letter-
 .bar{height:8px;background:var(--line);border-radius:4px;margin-top:10px;overflow:hidden}.bar i{display:block;height:100%;width:0}
 .jev .bar i{background:var(--jev)}.llm .bar i{background:var(--llm)}
 .status{margin-top:8px;color:var(--warn);min-height:1.4em}
+.conf{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:13px;color:var(--dim)}
+.conf b{color:var(--fg);font-variant-numeric:tabular-nums}
+.cbar{flex:1 1 100%;height:6px;background:var(--line);border-radius:3px;overflow:hidden}.cbar i{display:block;height:100%;width:0;background:var(--warn);transition:width .1s}
 .foot{color:var(--dim);margin-top:16px;font-size:13px}
 </style>
 <main>
@@ -76,6 +79,9 @@ async function poll(p){
     root.querySelector('.fresh').textContent=s.step?fresh+'%':'–';
     root.querySelector('.bar i').style.width=fresh+'%';
     root.querySelector('.status').textContent=s.status+(s.last_latency_ms?` · last answer ${s.last_latency_ms} ms`:'')+` · lives ${s.lives}`;
+    root.querySelector('.act').textContent=s.action||'–';
+    root.querySelector('.cv').textContent=s.confidence==null?'–':s.confidence.toFixed(2);
+    root.querySelector('.cbar i').style.width=(s.confidence==null?0:Math.round(100*s.confidence))+'%';
     root.querySelector('img').src=p.url+'frame.png?'+Date.now();
   }catch(e){root.querySelector('.status').textContent='connecting…'}
   setTimeout(()=>poll(p),110);
@@ -88,7 +94,10 @@ PANEL = """<section class="p __CLS__" id="__ID__"><h2>__NAME__ <span class=tag>_
 <div class=stats><div class=s><b class=score>–</b><span>score</span></div>
 <div class=s><b class=dec>–</b><span>decisions</span></div>
 <div class=s><b class=fresh>–</b><span>fresh moves</span></div></div>
-<div class=bar><i></i></div><div class=status>connecting…</div></section>"""
+<div class=bar><i></i></div>
+<div class=conf><span class=clabel>last move <b class=act>–</b></span><span class=clabel>confidence <b class=cv>–</b></span>
+<div class=cbar><i></i></div></div>
+<div class=status>connecting…</div></section>"""
 
 
 def write_page(urls: dict, foot: str) -> Path:

@@ -25,7 +25,7 @@ from invaders.game import play
 
 STATE = {"status": "waiting", "decider": None, "model": None, "seed": None, "step": 0, "score": 0,
          "lives": 3, "decisions": 0, "stale": 0, "last_latency_ms": None, "action": None,
-         "start_at": None, "result": None}
+         "start_at": None, "result": None, "confidence": None}
 FRAME = {"png": b""}
 LOCK = threading.Lock()
 
@@ -78,13 +78,14 @@ def main():
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--start-at", type=float, default=0.0, help="unix time to start, so two players start together")
     ap.add_argument("--out", default="out.jsonl")
+    ap.add_argument("--policy", choices=["argmax", "axes"], default="argmax")
     ap.add_argument("--linger", type=int, default=900, help="seconds to keep serving after the game ends")
     a = ap.parse_args()
 
     server = ThreadingHTTPServer(("0.0.0.0", a.port), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
-    decider = make_decider(a.decider, seed=a.seed)
+    decider = make_decider(a.decider, seed=a.seed, policy=a.policy)
     with LOCK:
         STATE.update(decider=a.decider, model=decider.requested_model, seed=a.seed, start_at=a.start_at)
     # warm the first frame so the page is not blank while waiting
@@ -107,7 +108,8 @@ def main():
             FRAME["png"] = png
             STATE.update(step=steps, score=int(score), lives=int(info.get("lives", 0)),
                          decisions=live["calls"], stale=live["stale"], action=ACTIONS[action],
-                         last_latency_ms=round(live["lat"]) if live["lat"] else None)
+                         last_latency_ms=round(live["lat"]) if live["lat"] else None,
+                         confidence=round(live["conf"], 2) if live.get("conf") is not None else None)
 
     run = play(decider, a.seed, realtime=True, on_step=on_step)
     run["live_race"] = True
