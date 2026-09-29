@@ -1255,6 +1255,45 @@
           "decision_ms": 157
         },
         "notes": "Mitosis coach round 3: JEV chose trust_top_pick (conf 0.84) from 12 Cortex memories; played in Tenki sandbox 01a0ebc1-5850-7c6f-8a21-656cd28cacff"
+      },
+      {
+        "seed": 5,
+        "score": 95,
+        "steps": 352,
+        "frames": 1407,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 20,
+        "input_tokens": 22889,
+        "output_tokens": 1374,
+        "latency_ms_p50": 1130,
+        "latency_ms_p95": 1187,
+        "latency_ms_total": 22759,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 24.0,
+        "served_model": "jev-1.13.0",
+        "action_counts": {
+          "NOOP": 145,
+          "FIRE": 34,
+          "RIGHT": 0,
+          "LEFT": 35,
+          "RIGHTFIRE": 85,
+          "LEFTFIRE": 52
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "policy": "argmax",
+        "latency_tax_ms": 1050,
+        "mean_confidence": 0.673,
+        "low_conf_rate": 0.0,
+        "stale_steps": 331,
+        "cost_usd": 0.001,
+        "tenki_sandbox_id": "01a0ebc4-378a-766e-890a-10ea12b46395",
+        "sandbox_wall_clock_s": 42.6,
+        "notes": "Tenki sandbox 01a0ebc4-378a-766e-890a-10ea12b46395; conf gate 0.0; latency tax 1050 ms"
       }
     ],
     "baseline": [
