@@ -1114,6 +1114,43 @@
         "stale_steps": 364,
         "cost_usd": 0.0316,
         "notes": "Real-time 15 steps/s showdown"
+      },
+      {
+        "seed": 3,
+        "score": 40,
+        "steps": 454,
+        "frames": 1813,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 23,
+        "input_tokens": 30149,
+        "output_tokens": 1275,
+        "latency_ms_p50": 1032,
+        "latency_ms_p95": 2201,
+        "latency_ms_total": 29336,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 31.3,
+        "served_model": "claude-haiku-4-5",
+        "action_counts": {
+          "NOOP": 128,
+          "FIRE": 62,
+          "RIGHT": 74,
+          "LEFT": 122,
+          "RIGHTFIRE": 67,
+          "LEFTFIRE": 0
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "mean_confidence": 0.829,
+        "low_conf_rate": 0.0,
+        "stale_steps": 430,
+        "cost_usd": 0.0365,
+        "live_race": true,
+        "tenki_sandbox_id": "01a0eba8-fe23-7a7a-86d4-fa38fb69737b",
+        "notes": "live race, each player in its own Tenki sandbox; seed 3; JEV 100 pts / 227 decisions vs Claude 40 pts / 23 decisions"
       }
     ]
   }
