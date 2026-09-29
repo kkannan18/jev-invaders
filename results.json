@@ -14,6 +14,14 @@
       "served_model": "claude-haiku-4-5",
       "sdk_package": "system-one-adapter",
       "sdk_version": "0.2.1"
+    },
+    {
+      "role": "decider",
+      "provider": "typesafe",
+      "requested_model": "jev-latest",
+      "served_model": "jev-1.13.0",
+      "sdk_package": "typesafe-sdk",
+      "sdk_version": "0.7.2"
     }
   ],
   "config": {
@@ -95,6 +103,42 @@
       "tenki_sandbox_id": "01a0ea13-4af6-7711-8741-c0d9b0d8ad16",
       "sandbox_wall_clock_s": 29.9,
       "notes": "Tenki sandbox 01a0ea13-4af6-7711-8741-c0d9b0d8ad16; conf gate 0.0"
+    },
+    {
+      "seed": 2,
+      "score": 125,
+      "steps": 286,
+      "frames": 1143,
+      "lives_lost": 3,
+      "terminated": true,
+      "truncated": false,
+      "model_calls": 285,
+      "input_tokens": 323354,
+      "output_tokens": 19624,
+      "latency_ms_p50": 74,
+      "latency_ms_p95": 115,
+      "latency_ms_total": 22648,
+      "errors_by_status": {},
+      "retries": 0,
+      "fallback_actions": 0,
+      "wall_clock_s": 28.1,
+      "served_model": "jev-1.13.0",
+      "action_counts": {
+        "NOOP": 104,
+        "FIRE": 29,
+        "RIGHT": 8,
+        "LEFT": 12,
+        "RIGHTFIRE": 114,
+        "LEFTFIRE": 18
+      },
+      "mode": "turn_based",
+      "conf_threshold": 0.0,
+      "mean_confidence": 0.666,
+      "low_conf_rate": 0.0,
+      "cost_usd": 0.0136,
+      "tenki_sandbox_id": "01a0ea8b-ec42-7a97-be20-577f3a4b3eb4",
+      "sandbox_wall_clock_s": 42.9,
+      "notes": "Tenki sandbox 01a0ea8b-ec42-7a97-be20-577f3a4b3eb4; conf gate 0.0"
     }
   ],
   "baseline": {
