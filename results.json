@@ -1143,6 +1143,62 @@
           "decision_ms": 169
         },
         "notes": "Mitosis coach round 1: JEV chose trust_top_pick (conf 0.66) from 12 Cortex memories; played in Tenki sandbox 01a0ebbf-6fab-7a79-b724-f9189641f6dc"
+      },
+      {
+        "seed": 12,
+        "score": 110,
+        "steps": 387,
+        "frames": 1547,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 252,
+        "input_tokens": 287397,
+        "output_tokens": 17299,
+        "latency_ms_p50": 92,
+        "latency_ms_p95": 145,
+        "latency_ms_total": 24778,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 25.8,
+        "served_model": "jev-1.13.0",
+        "action_counts": {
+          "NOOP": 145,
+          "FIRE": 27,
+          "RIGHT": 0,
+          "LEFT": 65,
+          "RIGHTFIRE": 136,
+          "LEFTFIRE": 13
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "policy": "argmax",
+        "latency_tax_ms": 0,
+        "mean_confidence": 0.677,
+        "low_conf_rate": 0.0,
+        "stale_steps": 134,
+        "cost_usd": 0.0121,
+        "tenki_sandbox_id": "01a0ebc0-9ee5-7910-b5a5-95ab599db293",
+        "sandbox_wall_clock_s": 43.4,
+        "coach": {
+          "strategy": "trust_top_pick",
+          "confidence": 0.82,
+          "probabilities": {
+            "trust_top_pick": 0.87,
+            "axes_steering": 0.06,
+            "hold_when_unsure": 0.07
+          },
+          "cortex_evidence_ids": [
+            "agent:memories:3fbba62694f28f0820a73887",
+            "agent:memories:0c32d99f2253848aa58de638",
+            "agent:memories:2190b071fdbd052686b131d1",
+            "agent:memories:89f4805d371352875f9c399b",
+            "agent:memories:a8249ad8cd30abd3a792bf5c"
+          ],
+          "decision_ms": 142
+        },
+        "notes": "Mitosis coach round 2: JEV chose trust_top_pick (conf 0.82) from 12 Cortex memories; played in Tenki sandbox 01a0ebc0-9ee5-7910-b5a5-95ab599db293"
       }
     ],
     "baseline": [
