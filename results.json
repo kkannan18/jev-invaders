@@ -859,6 +859,41 @@
         "stale_steps": 275,
         "cost_usd": 0.0179,
         "notes": "Real-time 15 steps/s showdown"
+      },
+      {
+        "seed": 5,
+        "score": 165,
+        "steps": 397,
+        "frames": 1587,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 248,
+        "input_tokens": 284300,
+        "output_tokens": 17029,
+        "latency_ms_p50": 101,
+        "latency_ms_p95": 141,
+        "latency_ms_total": 26020,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 26.4,
+        "served_model": "jev-1.13.0",
+        "action_counts": {
+          "NOOP": 180,
+          "FIRE": 34,
+          "RIGHT": 11,
+          "LEFT": 22,
+          "RIGHTFIRE": 130,
+          "LEFTFIRE": 19
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "mean_confidence": 0.688,
+        "low_conf_rate": 0.0,
+        "stale_steps": 148,
+        "cost_usd": 0.0119,
+        "notes": "Real-time 15 steps/s showdown"
       }
     ],
     "baseline": [
