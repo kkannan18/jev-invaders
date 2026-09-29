@@ -389,6 +389,40 @@
       "low_conf_rate": 0.237,
       "cost_usd": 0.0248,
       "notes": "Confidence gate 0.5: hold last action when JEV is less sure (run locally; Tenki had no capacity)"
+    },
+    {
+      "seed": 4,
+      "score": 155,
+      "steps": 405,
+      "frames": 1619,
+      "lives_lost": 3,
+      "terminated": true,
+      "truncated": false,
+      "model_calls": 404,
+      "input_tokens": 462244,
+      "output_tokens": 27738,
+      "latency_ms_p50": 125,
+      "latency_ms_p95": 298,
+      "latency_ms_total": 59397,
+      "errors_by_status": {},
+      "retries": 0,
+      "fallback_actions": 0,
+      "wall_clock_s": 65.0,
+      "served_model": "jev-1.13.0",
+      "action_counts": {
+        "NOOP": 201,
+        "FIRE": 11,
+        "RIGHT": 0,
+        "LEFT": 34,
+        "RIGHTFIRE": 114,
+        "LEFTFIRE": 44
+      },
+      "mode": "turn_based",
+      "conf_threshold": 0.5,
+      "mean_confidence": 0.663,
+      "low_conf_rate": 0.131,
+      "cost_usd": 0.0194,
+      "notes": "Confidence gate 0.5: hold last action when JEV is less sure (run locally; Tenki had no capacity)"
     }
   ],
   "baseline": {
