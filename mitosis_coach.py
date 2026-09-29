@@ -28,7 +28,7 @@ from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parent
 ENDPOINT = os.environ.get("MI_ENDPOINT", "https://m.mitosislabs.ai")
-FEED = "jev_invaders.games"
+FEED = "ext_agent.integration_feed"
 
 # The strategies the coach can choose between (all JEV; they differ in how its answer is used).
 STRATEGIES = {
@@ -47,7 +47,7 @@ def _post(path, body):
         sys.exit("Set MI_API_KEY and MI_OFFICE (your Mitosis API key and office id).")
     req = urllib.request.Request(f"{ENDPOINT}/api/v1/offices/{office}/cortex/v1/{path}",
                                  data=json.dumps(body).encode(), method="POST",
-                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json", "User-Agent": "curl/8.7.1"})
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.loads(r.read() or b"{}")
 
@@ -74,8 +74,8 @@ def ingest(runs_with_mode):
         rows.append({"external_id": uid, "title": text, "content": text,
                      "metadata": {"seed": run["seed"], "score": run["score"], "strategy": strategy_of(run),
                                   "mode": mode, "model": run.get("served_model")}})
-    for i in range(0, len(rows), 50):
-        _post("ingest", {"feed_key": FEED, "defer_embed": False, "rows": rows[i:i + 50]})
+    for row in rows:
+        _post("remember", {"agent": "jev-coach", "kind": "outcome", "text": row["content"]})
     return len(rows)
 
 
