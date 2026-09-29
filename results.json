@@ -1042,6 +1042,41 @@
         "stale_steps": 650,
         "cost_usd": 0.0539,
         "notes": "Real-time 15 steps/s showdown"
+      },
+      {
+        "seed": 5,
+        "score": 35,
+        "steps": 385,
+        "frames": 1539,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 20,
+        "input_tokens": 26145,
+        "output_tokens": 1097,
+        "latency_ms_p50": 1096,
+        "latency_ms_p95": 1689,
+        "latency_ms_total": 25137,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 26.2,
+        "served_model": "claude-haiku-4-5",
+        "action_counts": {
+          "NOOP": 179,
+          "FIRE": 111,
+          "RIGHT": 22,
+          "LEFT": 16,
+          "RIGHTFIRE": 56,
+          "LEFTFIRE": 0
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "mean_confidence": 0.872,
+        "low_conf_rate": 0.0,
+        "stale_steps": 364,
+        "cost_usd": 0.0316,
+        "notes": "Real-time 15 steps/s showdown"
       }
     ]
   }
