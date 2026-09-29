@@ -1007,6 +1007,41 @@
         "tenki_sandbox_id": "01a0ea94-e22e-7ba0-ae26-495358798210",
         "sandbox_wall_clock_s": 260.8,
         "notes": "Tenki sandbox 01a0ea94-e22e-7ba0-ae26-495358798210; conf gate 0.0"
+      },
+      {
+        "seed": 4,
+        "score": 115,
+        "steps": 685,
+        "frames": 2737,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 34,
+        "input_tokens": 44615,
+        "output_tokens": 1851,
+        "latency_ms_p50": 1133,
+        "latency_ms_p95": 2240,
+        "latency_ms_total": 45280,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 46.3,
+        "served_model": "claude-haiku-4-5",
+        "action_counts": {
+          "NOOP": 272,
+          "FIRE": 231,
+          "RIGHT": 48,
+          "LEFT": 17,
+          "RIGHTFIRE": 91,
+          "LEFTFIRE": 25
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "mean_confidence": 0.833,
+        "low_conf_rate": 0.0,
+        "stale_steps": 650,
+        "cost_usd": 0.0539,
+        "notes": "Real-time 15 steps/s showdown"
       }
     ]
   }
