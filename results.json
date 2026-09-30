@@ -3032,6 +3032,66 @@
         },
         "phase": "coach",
         "notes": "Mitosis coach round 1: JEV chose six:axes (conf 0.34) from 12 Cortex memories; played in Tenki sandbox 01a0f053-bb8f-78bb-bb3f-37f388b2d840"
+      },
+      {
+        "seed": 22,
+        "score": 330,
+        "steps": 871,
+        "frames": 3484,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 755,
+        "input_tokens": 859158,
+        "output_tokens": 51458,
+        "latency_ms_p50": 66,
+        "latency_ms_p95": 108,
+        "latency_ms_total": 56087,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 58.0,
+        "served_model": "jev-1.13.0",
+        "action_counts": {
+          "NOOP": 505,
+          "FIRE": 71,
+          "RIGHT": 67,
+          "LEFT": 80,
+          "RIGHTFIRE": 108,
+          "LEFTFIRE": 39
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "policy": "axes",
+        "latency_tax_ms": 0,
+        "variant": "six",
+        "mean_confidence": 0.61,
+        "low_conf_rate": 0.0,
+        "stale_steps": 115,
+        "cost_usd": 0.0361,
+        "tenki_sandbox_id": "01a0f054-6ee4-759d-8626-6cbc4b3f9ccb",
+        "sandbox_wall_clock_s": 73.7,
+        "coach": {
+          "strategy": "six:axes",
+          "confidence": 0.21,
+          "probabilities": {
+            "split": 0.11,
+            "six:axes": 0.36,
+            "six": 0.31,
+            "split_lean": 0.01,
+            "six_lean": 0.21
+          },
+          "cortex_evidence_ids": [
+            "agent:memories:436eb93ecd4b9924264109c4",
+            "agent:memories:c7d8d1683552f2cf4f66cd0b",
+            "agent:memories:232a59b95f6a49391ff7f3c9",
+            "agent:memories:c154e3c8a6eff80a73a5fb2b",
+            "agent:memories:807e6538d3c31d09664796c5"
+          ],
+          "decision_ms": 165
+        },
+        "phase": "coach",
+        "notes": "Mitosis coach round 2: JEV chose six:axes (conf 0.21) from 12 Cortex memories; played in Tenki sandbox 01a0f054-6ee4-759d-8626-6cbc4b3f9ccb"
       }
     ],
     "baseline": [
