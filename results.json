@@ -3092,6 +3092,66 @@
         },
         "phase": "coach",
         "notes": "Mitosis coach round 2: JEV chose six:axes (conf 0.21) from 12 Cortex memories; played in Tenki sandbox 01a0f054-6ee4-759d-8626-6cbc4b3f9ccb"
+      },
+      {
+        "seed": 23,
+        "score": 230,
+        "steps": 477,
+        "frames": 1905,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 426,
+        "input_tokens": 300467,
+        "output_tokens": 24564,
+        "latency_ms_p50": 65,
+        "latency_ms_p95": 106,
+        "latency_ms_total": 30533,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 31.7,
+        "served_model": "jev-1.13.0",
+        "action_counts": {
+          "NOOP": 212,
+          "FIRE": 107,
+          "RIGHT": 65,
+          "LEFT": 19,
+          "RIGHTFIRE": 71,
+          "LEFTFIRE": 2
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "policy": "argmax",
+        "latency_tax_ms": 0,
+        "variant": "split_lean",
+        "mean_confidence": 0.758,
+        "low_conf_rate": 0.0,
+        "stale_steps": 50,
+        "cost_usd": 0.0126,
+        "tenki_sandbox_id": "01a0f055-9c6e-7653-a341-40ac11976d86",
+        "sandbox_wall_clock_s": 58.6,
+        "coach": {
+          "strategy": "split_lean",
+          "confidence": 0.48,
+          "probabilities": {
+            "split_lean": 0.59,
+            "six:axes": 0.25,
+            "split": 0.07,
+            "six": 0.08,
+            "six_lean": 0.01
+          },
+          "cortex_evidence_ids": [
+            "agent:memories:436eb93ecd4b9924264109c4",
+            "agent:memories:c7d8d1683552f2cf4f66cd0b",
+            "agent:memories:232a59b95f6a49391ff7f3c9",
+            "agent:memories:c154e3c8a6eff80a73a5fb2b",
+            "agent:memories:807e6538d3c31d09664796c5"
+          ],
+          "decision_ms": 162
+        },
+        "phase": "coach",
+        "notes": "Mitosis coach round 3: JEV chose split_lean (conf 0.48) from 12 Cortex memories; played in Tenki sandbox 01a0f055-9c6e-7653-a341-40ac11976d86"
       }
     ],
     "baseline": [
