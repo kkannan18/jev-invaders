@@ -1,0 +1,51 @@
+{
+  "variant": "six",
+  "policy": "axes",
+  "design": "six:axes",
+  "tuned_on_seeds": [
+    101,
+    102,
+    103,
+    104,
+    105
+  ],
+  "leaderboard": [
+    {
+      "design": "six:axes",
+      "games": 5,
+      "mean_score": 233,
+      "p50_ms": 78,
+      "mean_confidence": 0.657
+    },
+    {
+      "design": "split_lean",
+      "games": 5,
+      "mean_score": 218,
+      "p50_ms": 76,
+      "mean_confidence": 0.78
+    },
+    {
+      "design": "six_lean",
+      "games": 5,
+      "mean_score": 206,
+      "p50_ms": 76,
+      "mean_confidence": 0.689
+    },
+    {
+      "design": "six",
+      "games": 5,
+      "mean_score": 191,
+      "p50_ms": 84,
+      "mean_confidence": 0.661
+    },
+    {
+      "design": "split",
+      "games": 5,
+      "mean_score": 145,
+      "p50_ms": 83,
+      "mean_confidence": 0.791
+    }
+  ],
+  "tuning_wall_clock_s": 491,
+  "chosen_at": "2026-09-29T20:12:50-0700"
+}
