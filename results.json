@@ -3729,6 +3729,46 @@
         "tenki_sandbox_id": "01a0f057-99c7-7f2f-b324-82ad342926be",
         "sandbox_wall_clock_s": 41.8,
         "notes": "Tenki sandbox 01a0f057-99c7-7f2f-b324-82ad342926be; conf gate 0.0"
+      },
+      {
+        "seed": 8,
+        "score": 85,
+        "steps": 525,
+        "frames": 2099,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 26,
+        "input_tokens": 34001,
+        "output_tokens": 1410,
+        "latency_ms_p50": 1067,
+        "latency_ms_p95": 2707,
+        "latency_ms_total": 34425,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 35.5,
+        "served_model": "claude-haiku-4-5",
+        "action_counts": {
+          "NOOP": 176,
+          "FIRE": 209,
+          "RIGHT": 24,
+          "LEFT": 100,
+          "RIGHTFIRE": 15,
+          "LEFTFIRE": 0
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "policy": "argmax",
+        "latency_tax_ms": 0,
+        "variant": "six",
+        "mean_confidence": 0.835,
+        "low_conf_rate": 0.0,
+        "stale_steps": 498,
+        "cost_usd": 0.0411,
+        "tenki_sandbox_id": "01a0f057-8837-70d1-997b-6b5b090a65d2",
+        "sandbox_wall_clock_s": 58.6,
+        "notes": "Tenki sandbox 01a0f057-8837-70d1-997b-6b5b090a65d2; conf gate 0.0"
       }
     ]
   }
