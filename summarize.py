@@ -49,9 +49,16 @@ def agg(runs):
     return out
 
 
+def _by_seed(runs):
+    out = defaultdict(list)
+    for r in runs:
+        out[r["seed"]].append(r["score"])
+    return {k: st.mean(v) for k, v in out.items()}
+
+
 def head_to_head(a, b):
-    """Per-seed wins/ties/losses of a over b, on seeds both played."""
-    sa, sb = {r["seed"]: r["score"] for r in a}, {r["seed"]: r["score"] for r in b}
+    """Per-seed wins/ties/losses of a over b (mean score per seed), on seeds both played."""
+    sa, sb = _by_seed(a), _by_seed(b)
     w = t = l = 0
     for s in sorted(set(sa) & set(sb)):
         w += sa[s] > sb[s]
@@ -61,31 +68,65 @@ def head_to_head(a, b):
             "per_seed": {s: [sa[s], sb[s]] for s in sorted(set(sa) & set(sb))}}
 
 
+def shared(a, b):
+    seeds = {r["seed"] for r in a} & {r["seed"] for r in b}
+    return [r for r in a if r["seed"] in seeds], [r for r in b if r["seed"] in seeds]
+
+
+def variant_of(r):
+    return r.get("variant") or "six"
+
+
+def is_plain(r):
+    return (not r.get("conf_threshold") and r.get("policy", "argmax") == "argmax" and not r.get("latency_tax_ms")
+            and r.get("phase") != "tune")
+
+
 def build(path="results.json"):
     d = json.loads(Path(path).read_text())
+    champ = None
+    cf = Path(path).resolve().parent / "champion.json"
+    if cf.exists():
+        champ = json.loads(cf.read_text())
     jev_all = [r for r in d["runs"] if str(r.get("served_model", "")).startswith("jev")]
-    jev = [r for r in jev_all if not r.get("conf_threshold") and r.get("policy", "argmax") == "argmax"]
-    axes = [r for r in jev_all if r.get("policy") == "axes"]
-    base = d["baseline"]["runs"]
+    base = [r for r in d["baseline"]["runs"] if variant_of(r) == "six"]
+    rt = d.get("realtime_showdown", {})
+    rj_all, rb = rt.get("jev", []), [r for r in rt.get("baseline", []) if variant_of(r) == "six"]
+
+    def pick(runs, variant):
+        return [r for r in runs if is_plain(r) and variant_of(r) == variant]
+
+    jev, rj = pick(jev_all, "six"), pick(rj_all, "six")
+    jev_p, base_p = shared(jev, base)
+    rj_p, rb_p = shared(rj, rb)
     gate = defaultdict(list)
     for r in jev_all:
-        if r.get("policy", "argmax") == "argmax":
+        if r.get("policy", "argmax") == "argmax" and variant_of(r) == "six" and r.get("phase") != "tune":
             gate[r.get("conf_threshold") or 0.0].append(r)
-    rt = d.get("realtime_showdown", {})
-    rj_all, rb = rt.get("jev", []), rt.get("baseline", [])
-    rj = [r for r in rj_all if r.get("policy", "argmax") == "argmax" and not r.get("latency_tax_ms")
-          and not r.get("conf_threshold")]
-    rj_tax = [r for r in rj_all if r.get("latency_tax_ms")]
-    rj_axes = [r for r in rj_all if r.get("policy") == "axes"]
-    J, B = agg(jev), agg(base)
+    tune = defaultdict(list)
+    for r in jev_all:
+        if r.get("phase") == "tune":
+            tune[f"{variant_of(r)}/{r.get('policy', 'argmax')}"].append(r)
+    J, B = agg(jev_p), agg(base_p)
     out = {
         "models": {m["role"] + ":" + m.get("requested_model", ""): m.get("served_model") for m in d["models"]},
-        "turn_based": {"jev": J, "baseline": B, "head_to_head": head_to_head(jev, base)},
-        "realtime": {"jev": agg(rj), "baseline": agg(rb), "head_to_head": head_to_head(rj, rb)},
+        "turn_based": {"jev": J, "baseline": B, "head_to_head": head_to_head(jev_p, base_p)},
+        "realtime": {"jev": agg(rj_p), "baseline": agg(rb_p), "head_to_head": head_to_head(rj_p, rb_p)},
         "confidence_gate": {str(t): agg(v) for t, v in sorted(gate.items())},
-        "latency_tax": agg(rj_tax),
-        "axes_policy": {"turn_based": agg(axes), "realtime": agg(rj_axes)},
+        "latency_tax": agg([r for r in rj_all if r.get("latency_tax_ms")]),
+        "tuning": {k: agg(v) for k, v in sorted(tune.items(), key=lambda kv: -st.mean(r["score"] for r in kv[1]))},
+        "champion": champ,
     }
+    if champ:
+        cv = champ["variant"]
+        cj = [r for r in jev_all if r.get("phase") == "test" and variant_of(r) == cv]
+        crt = [r for r in rj_all if r.get("phase") == "test" and variant_of(r) == cv]
+        cj_p, cb_p = shared(cj, base)
+        crt_p, crb_p = shared(crt, rb)
+        out["champion_test"] = {
+            "turn_based": {"jev": agg(cj_p), "baseline": agg(cb_p), "head_to_head": head_to_head(cj_p, cb_p)},
+            "realtime": {"jev": agg(crt_p), "baseline": agg(crb_p), "head_to_head": head_to_head(crt_p, crb_p)},
+        }
     if J and B:
         out["ratios"] = {
             "speedup_p50": round(B["latency_ms_p50"] / J["latency_ms_p50"], 1),
@@ -93,7 +134,7 @@ def build(path="results.json"):
             "score_ratio": round(J["mean_score"] / B["mean_score"], 2),
         }
     if out["realtime"]["jev"] and out["realtime"]["baseline"]:
-        out["ratios"]["realtime_score_ratio"] = round(
+        out.setdefault("ratios", {})["realtime_score_ratio"] = round(
             out["realtime"]["jev"]["mean_score"] / out["realtime"]["baseline"]["mean_score"], 2)
     return out
 
@@ -114,7 +155,7 @@ def main():
     tb, rt, ra = s["turn_based"], s["realtime"], s.get("ratios", {})
     J, B = tb["jev"], tb["baseline"]
     usd = lambda x: f"${x:.6f}" if x is not None else "-"
-    table("TURN-BASED (the game waits for each decision)",
+    table("TURN-BASED, original design, on seeds both played (the game waits for each decision)",
           [["JEV", J["games"], J["mean_score"], J["human_normalized"], J["latency_ms_p50"], J["latency_ms_p95"],
             usd(J["cost_usd_per_decision"]), f"${J['cost_usd_total']:.2f}", J["errors"]],
            ["LLM baseline", B["games"], B["mean_score"], B["human_normalized"], B["latency_ms_p50"],
@@ -124,7 +165,7 @@ def main():
     print(f"  head to head by seed: JEV {h['wins']} wins, {h['ties']} ties, {h['losses']} losses")
     if rt["jev"] and rt["baseline"]:
         RJ, RB = rt["jev"], rt["baseline"]
-        table("REAL-TIME (15 steps/s; the ship repeats its last move until the next answer lands)",
+        table("REAL-TIME, original design, on seeds both played (15 steps/s; stale moves repeat)",
               [["JEV", RJ["games"], RJ["mean_score"], RJ["fresh_decision_rate"], RJ["decisions_per_game"]],
                ["LLM baseline", RB["games"], RB["mean_score"], RB["fresh_decision_rate"], RB["decisions_per_game"]]],
               ["decider", "games", "mean score", "fresh-decision rate", "decisions per game"])
@@ -135,16 +176,30 @@ def main():
         table("CONFIDENCE GATE (hold the last move when JEV's confidence is below the threshold)",
               [[t, v["games"], v["mean_score"], v.get("mean_confidence")] for t, v in g.items()],
               ["threshold", "games", "mean score", "mean confidence"])
-    if s["latency_tax"]:
+    if s["latency_tax"] and s["realtime"]["jev"]:
         T, RJ = s["latency_tax"], s["realtime"]["jev"]
         table("LATENCY-TAX CONTROL (real-time JEV with a delay added to match the LLM's speed)",
               [["JEV", RJ["games"], RJ["mean_score"], RJ["latency_ms_p50"]],
                ["JEV + delay", T["games"], T["mean_score"], T["latency_ms_p50"]]],
               ["decider", "games", "mean score", "p50 ms"])
-    ax = s["axes_policy"]
-    if ax["turn_based"] or ax["realtime"]:
-        rows = [[m, v["games"], v["mean_score"]] for m, v in (("turn-based", ax["turn_based"]), ("real-time", ax["realtime"])) if v]
-        table("AXES POLICY (JEV's probabilities summed into move and fire axes)", rows, ["mode", "games", "mean score"])
+    if s["tuning"]:
+        table("TENKI TUNING (question designs raced on held-out seeds, one sandbox per game)",
+              [[k, v["games"], v["seeds"], v["mean_score"], v["latency_ms_p50"], v.get("mean_confidence")]
+               for k, v in s["tuning"].items()],
+              ["design/policy", "games", "seeds", "mean score", "p50 ms", "mean confidence"])
+        if s["champion"]:
+            print(f"  champion: {s['champion']['variant']} (chosen on seeds {s['champion']['tuned_on_seeds']})")
+    ct = s.get("champion_test")
+    if ct:
+        for mode, title in (("turn_based", "CHAMPION vs LLM, turn-based, on the baseline's seeds"),
+                            ("realtime", "CHAMPION vs LLM, real-time, on the baseline's seeds")):
+            c = ct[mode]
+            if c["jev"] and c["baseline"]:
+                table(title, [["JEV champion", c["jev"]["games"], c["jev"]["seeds"], c["jev"]["mean_score"]],
+                              ["LLM baseline", c["baseline"]["games"], c["baseline"]["seeds"], c["baseline"]["mean_score"]]],
+                      ["decider", "games", "seeds", "mean score"])
+                h = c["head_to_head"]
+                print(f"  head to head by seed: JEV {h['wins']} wins, {h['ties']} ties, {h['losses']} losses")
     print(f"\nJEV is {ra.get('speedup_p50')}x faster per decision (median) and "
           f"{ra.get('cost_per_decision_ratio')}x cheaper per decision; "
           f"mean score {ra.get('score_ratio')}x turn-based, {ra.get('realtime_score_ratio')}x real-time.")

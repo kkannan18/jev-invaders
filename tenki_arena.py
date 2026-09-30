@@ -27,7 +27,7 @@ from invaders.results import record
 
 ROOT = Path(__file__).resolve().parent
 SHIP = ["play.py", "requirements.txt", "invaders/__init__.py", "invaders/env.py", "invaders/deciders.py",
-        "invaders/game.py", "invaders/results.py"]
+        "invaders/game.py", "invaders/results.py", "invaders/variants.py"]
 PYPI = ["pypi.org", "*.pypi.org", "files.pythonhosted.org", "*.pythonhosted.org"]
 EGRESS = {"jev": ["api.typesafe.ai"], "baseline": ["api.anthropic.com", "api.openai.com",
                                                     "generativelanguage.googleapis.com"],
@@ -72,8 +72,10 @@ def _run_job(kind, seed, thr, args):
         flags += f" --max-steps {args.max_steps}"
     if args.realtime:
         flags += " --realtime"
-    if args.policy != "argmax":
+    if args.policy and args.policy != "argmax":
         flags += f" --policy {args.policy}"
+    if getattr(args, "variant", None) and kind in ("jev", "baseline"):
+        flags += f" --variant {args.variant}"
     if args.latency_tax_ms and kind == "jev":
         flags += f" --latency-tax-ms {args.latency_tax_ms}"
     if args.model and kind == "jev":
@@ -85,7 +87,7 @@ def _run_job(kind, seed, thr, args):
                         allow_domains=(PYPI + EGRESS[kind]) if args.lockdown else None, max_duration=3 * 3600,
                         tags=["jev-bakeoff", kind]) as sb:
         sb.exec("mkdir", "-p", "invaders", timeout=30)
-        for f in SHIP:
+        for f in SHIP + (["champion.json"] if (ROOT / "champion.json").exists() else []):
             sb.fs.write_text(f, (ROOT / f).read_text())
         sb.exec("bash", "-lc", "python3 -m pip install -q -r requirements.txt 2>&1 | tail -3",
                 timeout=900, check=True)
@@ -123,8 +125,9 @@ def main():
     ap.add_argument("--baseline-model", default=None)
     ap.add_argument("--provider", default="anthropic")
     ap.add_argument("--parallel", type=int, default=5, help="concurrent sandboxes (the Tenki free workspace allows 5)")
-    ap.add_argument("--policy", choices=["argmax", "axes"], default="argmax")
+    ap.add_argument("--policy", choices=["argmax", "axes"], default=None)
     ap.add_argument("--latency-tax-ms", type=int, default=0, help="add this delay to every JEV answer (control)")
+    ap.add_argument("--variant", default=None, help="question design (see invaders/variants.py), or champion")
     ap.add_argument("--notes", default="")
     ap.add_argument("--no-push", action="store_true")
     ap.add_argument("--verbose", action="store_true")
@@ -147,7 +150,7 @@ def main():
                 print(f"!! {kind} seed {seed} thr {thr} failed: {exc}", flush=True)
                 continue
             note = args.notes or (f"Tenki sandbox {run['tenki_sandbox_id']}; conf gate {thr}"
-                                  + (f"; policy {args.policy}" if args.policy != "argmax" else "")
+                                  + (f"; policy {args.policy}" if args.policy and args.policy != "argmax" else "")
                                   + (f"; latency tax {args.latency_tax_ms} ms" if args.latency_tax_ms and kind == "jev" else ""))
             n = record(run, meta(kind, args.model if kind == "jev" else args.baseline_model, args.provider),
                        note, args.max_steps, push=not args.no_push)

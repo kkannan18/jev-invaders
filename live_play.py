@@ -78,14 +78,16 @@ def main():
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--start-at", type=float, default=0.0, help="unix time to start, so two players start together")
     ap.add_argument("--out", default="out.jsonl")
-    ap.add_argument("--policy", choices=["argmax", "axes"], default="argmax")
+    ap.add_argument("--policy", choices=["argmax", "axes"], default=None)
+    ap.add_argument("--variant", default=None)
     ap.add_argument("--linger", type=int, default=900, help="seconds to keep serving after the game ends")
     a = ap.parse_args()
 
     server = ThreadingHTTPServer(("0.0.0.0", a.port), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
-    decider = make_decider(a.decider, seed=a.seed, policy=a.policy)
+    decider = make_decider(a.decider, seed=a.seed, policy=a.policy,
+                           variant=a.variant if a.decider == "jev" else None)
     with LOCK:
         STATE.update(decider=a.decider, model=decider.requested_model, seed=a.seed, start_at=a.start_at)
     # warm the first frame so the page is not blank while waiting

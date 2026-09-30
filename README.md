@@ -7,11 +7,19 @@ Claude Haiku 4.5 gets the identical state and the identical question through the
 Every game runs in its own [Tenki](https://tenki.cloud) sandbox, and the live
 race streams both players side by side from their sandboxes.
 
-UFA JEV Bake-Off entry, **pilot** track.
+UFA JEV Bake-Off entry, **Pilot track**: JEV flies the ship and makes every move.
+
+**The loop:** Tenki tunes the pilot, Cortex remembers what worked, and JEV decides.
+Question designs race each other in parallel Tenki sandboxes on held-out seeds
+(`tune.py`), every result is remembered in Mitosis Cortex, JEV picks each next
+game's design from those memories (`mitosis_coach.py`), and the champion is
+judged against Claude on the seeds Claude played. CI replays every commit in
+Tenki and posts the score.
 
 ## Results
 
 All numbers below are recomputed from `results.json` by `python summarize.py`.
+Comparisons use only the seeds both deciders played.
 Seeds 1–5, `ALE/SpaceInvaders-v5`, sticky actions 0.25, full games (no step cap).
 
 ### Turn-based: the emulator waits for every decision
@@ -52,6 +60,36 @@ confidence is about 0.62. Our reading: several moves are often about equally
 good (firing while drifting left vs. just drifting left), so a low-confidence
 answer is usually still a reasonable one, and freezing on it costs more. The shipped pilot trusts every answer. Those runs are in
 `results.json` with `conf_threshold` and a note on each.
+
+## Tuning the pilot in Tenki (`tune.py`)
+
+JEV answers typed questions, so how you ask is a design choice. Four designs,
+each one request per step (same latency):
+
+| Design | What JEV is asked |
+|---|---|
+| `six` | one `choice` over the six ALE actions (the original) |
+| `six_lean` | the same, on a smaller state (derived features only) |
+| `split` | two typed answers in one call: a `choice` of where to steer (LEFT / RIGHT / STAY) and a `noul` (0 to 1) for "fire now" |
+| `split_lean` | `split`, on the smaller state |
+
+plus `six:axes` (sum the six-way probabilities into move and fire axes).
+
+```bash
+python tune.py --test-seeds 1 2 3 4 5
+```
+
+1. **Tune** on held-out seeds 101–105: 5 designs × 5 seeds = 25 games, each in
+   its own Tenki sandbox, 5 at a time. Leaderboard → `champion.json`, pushed.
+2. **Test** the champion on seeds 1–5, the seeds the LLM baseline played, turn-based
+   and real-time. Tuning and test seeds never overlap, so the champion is not
+   picked on the games it is judged on.
+3. Every result is also remembered in Mitosis Cortex (when `MI_API_KEY` and
+   `MI_OFFICE` are set).
+
+`python summarize.py` prints the leaderboard and the champion vs LLM tables.
+`--variant champion` plays the champion anywhere (`play.py`, `tenki_arena.py`,
+`live_race.py`).
 
 ## Using the typed answer, not just the top pick
 
@@ -94,10 +132,12 @@ race on your own machine.
   confidence-threshold jobs (5 at a time on the free workspace), retries when
   Tenki is out of capacity, and pushes each game the moment it finishes. The
   sandbox id is stored on each run as `tenki_sandbox_id`.
+- **Tuning.** `tune.py` races question designs in parallel sandboxes and crowns
+  the champion the pilot flies with.
 - **CI replay on every push.** `.github/workflows/tenki-replay.yml` runs
-  `ci_replay.py`, which replays reference games in fresh Tenki sandboxes, checks
-  the scores reproduce exactly, and posts a table on the commit. Add
-  `TENKI_API_KEY` as a repository secret to enable it.
+  `ci_replay.py`: reference games replayed in fresh Tenki sandboxes must match
+  exactly, and the current champion plays one JEV game whose score is posted on
+  the commit. Secrets: `TENKI_API_KEY`, and `TYPESAFE_API_KEY` for the JEV score.
 - The turn-based results, and the first real-time seeds, ran in Tenki. When
   Tenki had no capacity, later games ran locally with the same code; each run
   records where it ran.
@@ -107,10 +147,10 @@ race on your own machine.
 `mitosis_coach.py` puts JEV in charge of its own training plan, with Cortex as
 its memory. Each round:
 
-1. **Recall.** Cortex returns the remembered games most relevant to "which JEV
-   strategy scored the most in real time?", each with its Cortex id.
-2. **Decide.** JEV answers a typed `choice` question, which strategy should play
-   the next game, with those memories as its state. It returns a pick, a
+1. **Recall.** Cortex returns the remembered games and Tenki tuning leaderboards
+   most relevant to "which JEV design scores the most?", each with its Cortex id.
+2. **Decide.** JEV answers a typed `choice` question, which of the five designs
+   should play the next game, with those memories as its state. It returns a pick, a
    probability for every strategy, and a confidence.
 3. **Play.** The chosen strategy plays the next seed in real time inside a
    Tenki sandbox.
@@ -203,6 +243,8 @@ before the next game is recorded.
 | `tenki_arena.py` | Parallel games in Tenki sandboxes, with capacity retries |
 | `live_play.py` | One live player: real-time game plus spectator view over HTTP |
 | `live_race.py` | Two live players in Tenki sandboxes, split-screen page, results pushed |
+| `invaders/variants.py` | The question designs: state shaping, typed questions, decoding answers |
+| `tune.py` | Tenki tuning sweep on held-out seeds, champion.json, champion test |
 | `summarize.py` | The scoreboard, recomputed from `results.json` |
 | `mitosis_coach.py` | JEV chooses the next strategy from Cortex memory; games run in Tenki |
 | `ci_replay.py` | CI check: replay reference games in Tenki and compare scores |

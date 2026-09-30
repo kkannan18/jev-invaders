@@ -32,23 +32,23 @@ RACE_HTML = """<!doctype html><html lang=en><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>JEV vs Claude, live</title>
 <link rel=preconnect href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel=stylesheet>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel=stylesheet>
 <style>
 :root{--bg:#07080c;--panel:#0f121a;--line:#232838;--fg:#e9ecf4;--dim:#8a93a8;--jev:#5cf2b3;--llm:#ff8a5c;--warn:#ffd35c}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 "IBM Plex Mono",ui-monospace,Menlo,monospace}
 main{max-width:1100px;margin:0 auto;padding:20px 16px 28px}
-h1{font:700 clamp(22px,4vw,34px)/1.1 Silkscreen,monospace;margin:0 0 4px;letter-spacing:.02em}
+h1{font:700 clamp(22px,4vw,34px)/1.1 "JetBrains Mono",monospace;margin:0 0 4px;letter-spacing:.02em}
 .sub{color:var(--dim);margin:0 0 18px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media (max-width:760px){.grid{grid-template-columns:1fr}}
 .p{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;min-width:0}
-.p h2{font:700 18px Silkscreen,monospace;margin:0;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.p h2{font:700 18px "JetBrains Mono",monospace;margin:0;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .p.jev h2{color:var(--jev)}.p.llm h2{color:var(--llm)}
 .tag{font:12px "IBM Plex Mono",monospace;color:var(--dim)}
 .screen{margin:10px 0;background:#000;border:1px solid var(--line);aspect-ratio:160/210;width:100%;max-width:100%}
 .screen img{width:100%;height:100%;image-rendering:pixelated;display:block}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.s{border-top:1px solid var(--line);padding-top:6px}.s b{display:block;font:700 22px Silkscreen,monospace;font-variant-numeric:tabular-nums}
+.s{border-top:1px solid var(--line);padding-top:6px}.s b{display:block;font:700 22px "JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
 .s span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
 .bar{height:8px;background:var(--line);border-radius:4px;margin-top:10px;overflow:hidden}.bar i{display:block;height:100%;width:0}
 .jev .bar i{background:var(--jev)}.llm .bar i{background:var(--llm)}
@@ -114,7 +114,7 @@ def write_page(urls: dict, foot: str) -> Path:
 
 def ship_files(sb):
     sb.exec("mkdir", "-p", "invaders", timeout=30)
-    for f in SHIP + ["live_play.py"]:
+    for f in SHIP + ["live_play.py"] + (["champion.json"] if (ROOT / "champion.json").exists() else []):
         sb.fs.write_text(f, (ROOT / f).read_text())
 
 
@@ -150,12 +150,16 @@ def race_tenki(a):
             b.close()
         sys.exit("Tenki setup failed: " + "; ".join(errors) + "\nTry again, or run: python live_race.py --local")
 
+    if a.wait:
+        print("\n>>> Both Tenki sandboxes are ready. Start recording, then press Enter to launch the race.", flush=True)
+        input()
     start_at = time.time() + a.countdown
     urls = {}
     for kind, sb in boxes.items():
         env = {k: os.environ[k] for k in KEYS[kind] if os.environ.get(k)}
         sb.exec("bash", "-lc",
                 f"setsid nohup python3 live_play.py --decider {kind} --seed {a.seed} --port 8080 "
+                f"{'--variant ' + a.variant + ' ' if kind == 'jev' and a.variant else ''}"
                 f"--start-at {start_at} > live.log 2>&1 < /dev/null &", env=env, timeout=30)
         url = sb.expose_port(8080, ttl=3600).url
         urls[kind] = url.rstrip("/") + "/"
@@ -197,9 +201,10 @@ def race_local(a):
         port = 8081 + i
         outs[kind] = ROOT / f"live_{kind}.jsonl"
         outs[kind].unlink(missing_ok=True)
+        extra = ["--variant", a.variant] if kind == "jev" and a.variant else []
         procs[kind] = subprocess.Popen([sys.executable, "live_play.py", "--decider", kind, "--seed", str(a.seed),
                                         "--port", str(port), "--start-at", str(start_at), "--out", str(outs[kind]),
-                                        "--linger", str(a.hold)], cwd=ROOT)
+                                        "--linger", str(a.hold)] + extra, cwd=ROOT)
         urls[kind] = f"http://localhost:{port}/"
     page = write_page(urls, f"Both players on this machine (local fallback). Seed {a.seed}.")
     time.sleep(2)
@@ -238,6 +243,8 @@ def main():
     ap.add_argument("--seed", type=int, default=3)
     ap.add_argument("--local", action="store_true", help="run both players on this machine instead of Tenki")
     ap.add_argument("--countdown", type=int, default=12, help="seconds between opening the page and the start")
+    ap.add_argument("--wait", action="store_true", help="set up the sandboxes, then wait for Enter before starting")
+    ap.add_argument("--variant", default=None, help="JEV question design, e.g. champion")
     ap.add_argument("--hold", type=int, default=120, help="seconds to keep the views up after the race")
     ap.add_argument("--no-push", action="store_true")
     ap.add_argument("--no-record", action="store_true")

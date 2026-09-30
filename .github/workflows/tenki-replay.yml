@@ -2,7 +2,7 @@ name: Tenki replay
 on:
   push:
     branches: [main]
-    paths-ignore: ["results.json"]
+    paths-ignore: ["results.json", "champion.json"]
   workflow_dispatch:
 jobs:
   replay:
@@ -17,4 +17,5 @@ jobs:
       - name: Replay reference games in Tenki sandboxes
         env:
           TENKI_API_KEY: ${{ secrets.TENKI_API_KEY }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
         run: python ci_replay.py

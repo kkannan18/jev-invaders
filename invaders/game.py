@@ -134,6 +134,7 @@ def play(decider, seed: int, max_steps: int | None = None, conf_threshold: float
         "conf_threshold": conf_threshold,
         "policy": getattr(decider, "policy", "argmax"),
         "latency_tax_ms": getattr(decider, "latency_tax_ms", 0),
+        "variant": getattr(decider, "variant", None),
     }
     if confs:
         run["mean_confidence"] = round(float(np.mean(confs)), 3)

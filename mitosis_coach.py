@@ -32,12 +32,16 @@ FEED = "ext_agent.integration_feed"
 
 # The strategies the coach can choose between (all JEV; they differ in how its answer is used).
 STRATEGIES = {
-    "trust_top_pick": {"policy": "argmax", "conf": 0.0,
-                       "about": "Play JEV's top-probability move every frame."},
-    "axes_steering": {"policy": "axes", "conf": 0.0,
-                      "about": "Sum JEV's probabilities into move and fire axes, then act."},
-    "hold_when_unsure": {"policy": "argmax", "conf": 0.5,
-                         "about": "Repeat the last move when JEV's confidence is below 0.5."},
+    "six": {"variant": "six", "policy": "argmax", "conf": 0.0,
+            "about": "One typed choice over the six moves; play the top pick."},
+    "six:axes": {"variant": "six", "policy": "axes", "conf": 0.0,
+                 "about": "One six-way choice; sum its probabilities into move and fire axes."},
+    "six_lean": {"variant": "six_lean", "policy": "argmax", "conf": 0.0,
+                 "about": "Six-way choice on a smaller, derived-features-only state."},
+    "split": {"variant": "split", "policy": "argmax", "conf": 0.0,
+              "about": "Two typed answers per frame: a steer choice (left/right/stay) and a yes/no fire value."},
+    "split_lean": {"variant": "split_lean", "policy": "argmax", "conf": 0.0,
+                   "about": "Steer choice plus fire yes/no, on the smaller state."},
 }
 
 
@@ -53,11 +57,8 @@ def _post(path, body):
 
 
 def strategy_of(run) -> str:
-    if run.get("policy") == "axes":
-        return "axes_steering"
-    if run.get("conf_threshold"):
-        return "hold_when_unsure"
-    return "trust_top_pick"
+    v = run.get("variant") or "six"
+    return f"{v}:axes" if run.get("policy") == "axes" else v
 
 
 def memory_line(run, mode) -> str:
@@ -88,7 +89,7 @@ def seed_memory():
 
 
 def recall():
-    q = "Which JEV strategy scored the most points in real-time Space Invaders games?"
+    q = "Which JEV design scored the most points in Space Invaders games, and the Tenki tuning leaderboard?"
     res = _post("answer", {"query": q, "limit": 12})
     ev = []
     for r in res.get("results", []):
@@ -106,10 +107,10 @@ def jev_pick(evidence, seed):
              "cortex_memories": evidence}
     q = {"next_strategy": {
         "type": "choice",
-        "instructions": ("You are coaching a Space Invaders pilot. Using the remembered game results, pick the "
-                         "strategy most likely to score the most points in the next real-time game. Prefer "
-                         "strategies with higher remembered scores; when a strategy has few remembered games, "
-                         "trying it can be worth it."),
+        "instructions": ("You are coaching a Space Invaders pilot. Using the remembered game results and "
+                         "tuning leaderboards, pick the design most likely to score the most points in the next "
+                         "real-time game. Prefer designs with higher remembered scores; when a design has few "
+                         "remembered games, trying it can be worth it."),
         "criteria": {k: v["about"] for k, v in STRATEGIES.items()}}}
     t0 = time.perf_counter()
     r = client.system_one(state, q)
@@ -123,7 +124,7 @@ def play_round(name, seed):
 
     s = STRATEGIES[name]
     args = SimpleNamespace(max_steps=None, realtime=True, model=None, baseline_model=None, provider="anthropic",
-                           policy=s["policy"], latency_tax_ms=0, lockdown=False, verbose=False)
+                           policy=s["policy"], latency_tax_ms=0, lockdown=False, verbose=False, variant=s["variant"])
     run = run_job("jev", seed, s["conf"], args)
     return run, record, meta
 
@@ -149,7 +150,7 @@ def main():
         run["coach"] = {"strategy": choice, "confidence": round(conf, 3), "probabilities": probs,
                         "cortex_evidence_ids": cited, "decision_ms": ms}
         m = meta("jev")
-        m.policy = STRATEGIES[choice]["policy"]
+        run["phase"] = "coach"
         n = record(run, m, f"Mitosis coach round {i + 1}: JEV chose {choice} (conf {conf:.2f}) from "
                            f"{len(evidence)} Cortex memories; played in Tenki sandbox {run['tenki_sandbox_id']}",
                    push=not a.no_push)

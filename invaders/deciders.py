@@ -13,6 +13,7 @@ import time
 from dataclasses import dataclass, field
 
 from .env import ACTIONS
+from . import variants as V
 
 INSTRUCTIONS = (
     "You are piloting the laser cannon in Atari Space Invaders. The state is the current frame "
@@ -91,6 +92,7 @@ class _Remote:
     requested_model = "?"
     policy = "argmax"  # or "axes": see axes_action
     latency_tax_ms = 0  # control experiment: add a fixed delay to every answer
+    variant = "six"  # question design, see invaders/variants.py
 
     def cost(self, itok, otok):
         p = PRICES.get(self.requested_model)
@@ -104,7 +106,8 @@ class _Remote:
         t0 = time.perf_counter()
         for attempt in range(MAX_RETRIES + 1):
             try:
-                choice, conf, itok, otok, served, probs = self._call(state)
+                answers, itok, otok, served = self._ask(V.prepare(state, self.variant), V.questions(self.variant))
+                choice, conf, probs = V.decode(answers, self.variant)
                 if self.latency_tax_ms:
                     time.sleep(self.latency_tax_ms / 1000)
                 if self.policy == "axes" and probs:
@@ -137,11 +140,9 @@ class JEVDecider(_Remote):
         self.sdk_package, self.sdk_version = "typesafe-sdk", typesafe_sdk.__version__
         self.client = TypeSafeClient(model=model, retry=RetryPolicy(max_retries=0), timeout=10.0)
 
-    def _call(self, state):
-        r = self.client.system_one(state, question())
-        a = r.answers["move"]
-        return (a.choice, a.confidence, r.usage.input_tokens, r.usage.output_tokens, r.model,
-                getattr(a, "probabilities", None))
+    def _ask(self, state, qs):
+        r = self.client.system_one(state, qs)
+        return r.answers, r.usage.input_tokens, r.usage.output_tokens, r.model
 
 
 class LLMDecider(_Remote):
@@ -156,9 +157,8 @@ class LLMDecider(_Remote):
         self.client = SystemOneAdapterClient(structured_outputs=True, llm_answer_mode="probabilities",
                                              normalize_probabilities=True, provider=provider, model=model)
 
-    def _call(self, state):
-        r = self.client.system_one(state, question())
-        a = r.answers["move"]
+    def _ask(self, state, qs):
+        r = self.client.system_one(state, qs)
         u = r.usage
         itok = getattr(u, "input_tokens_total", None) or u.input_tokens
         otok = getattr(u, "output_tokens_total", None) or u.output_tokens
@@ -167,8 +167,7 @@ class LLMDecider(_Remote):
             served = (att.get("debug_info") or {}).get("model") or served
             if served:
                 break
-        return (a.choice, a.confidence, itok, otok, served or self.requested_model,
-                getattr(a, "probabilities", None))
+        return r.answers, itok, otok, served or self.requested_model
 
 
 
@@ -212,12 +211,14 @@ class ScriptedDecider:
 def make_decider(kind: str, **kw):
     if kind == "jev":
         d = JEVDecider(kw.get("model") or os.environ.get("JEV_MODEL", "jev-latest"))
-        d.policy = kw.get("policy") or "argmax"
+        d.policy = kw.get("policy") or (V.champion_policy() if kw.get("variant") == "champion" else None) or "argmax"
         d.latency_tax_ms = kw.get("latency_tax_ms") or 0
+        d.variant = V.resolve(kw.get("variant"))
         return d
     if kind == "baseline":
         d = LLMDecider(kw.get("provider") or "anthropic", kw.get("model") or "claude-haiku-4-5")
         d.policy = kw.get("policy") or "argmax"
+        d.variant = V.resolve(kw.get("variant"))
         return d
     if kind == "random":
         return RandomDecider(kw.get("seed", 0))
