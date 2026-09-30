@@ -2972,6 +2972,66 @@
         "sandbox_wall_clock_s": 58.7,
         "phase": "test",
         "notes": "test: design six:axes, real-time, Tenki sandbox 01a0f04e-a7c2-7996-8be9-490fb58374e5"
+      },
+      {
+        "seed": 21,
+        "score": 85,
+        "steps": 265,
+        "frames": 1057,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 231,
+        "input_tokens": 260981,
+        "output_tokens": 15884,
+        "latency_ms_p50": 69,
+        "latency_ms_p95": 109,
+        "latency_ms_total": 16960,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 17.7,
+        "served_model": "jev-1.13.0",
+        "action_counts": {
+          "NOOP": 91,
+          "FIRE": 63,
+          "RIGHT": 5,
+          "LEFT": 0,
+          "RIGHTFIRE": 86,
+          "LEFTFIRE": 19
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "policy": "axes",
+        "latency_tax_ms": 0,
+        "variant": "six",
+        "mean_confidence": 0.747,
+        "low_conf_rate": 0.0,
+        "stale_steps": 33,
+        "cost_usd": 0.011,
+        "tenki_sandbox_id": "01a0f053-bb8f-78bb-bb3f-37f388b2d840",
+        "sandbox_wall_clock_s": 43.1,
+        "coach": {
+          "strategy": "six:axes",
+          "confidence": 0.34,
+          "probabilities": {
+            "six": 0.24,
+            "split": 0.02,
+            "six:axes": 0.48,
+            "six_lean": 0.25,
+            "split_lean": 0.01
+          },
+          "cortex_evidence_ids": [
+            "agent:memories:436eb93ecd4b9924264109c4",
+            "agent:memories:c7d8d1683552f2cf4f66cd0b",
+            "agent:memories:232a59b95f6a49391ff7f3c9",
+            "agent:memories:c154e3c8a6eff80a73a5fb2b",
+            "agent:memories:807e6538d3c31d09664796c5"
+          ],
+          "decision_ms": 220
+        },
+        "phase": "coach",
+        "notes": "Mitosis coach round 1: JEV chose six:axes (conf 0.34) from 12 Cortex memories; played in Tenki sandbox 01a0f053-bb8f-78bb-bb3f-37f388b2d840"
       }
     ],
     "baseline": [
