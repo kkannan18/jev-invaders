@@ -42,7 +42,17 @@ def payload():
     d = json.loads((ROOT / "results.json").read_text())
     s = build(str(ROOT / "results.json"))
     rt = d.get("realtime_showdown", {})
-    rj = [r for r in rt.get("jev", []) if is_plain(r) and variant_of(r) == "six"]
+    champ = s.get("champion")
+    if champ and (s.get("champion_test") or {}).get("realtime", {}).get("jev"):
+        cv, cp = champ["variant"], champ.get("policy", "argmax")
+        rj = [r for r in rt.get("jev", []) if variant_of(r) == cv and r.get("policy", "argmax") == cp
+              and r.get("phase") not in ("tune", "coach") and not r.get("coach")
+              and not r.get("latency_tax_ms") and not r.get("conf_threshold")]
+        real_src = s["champion_test"]["realtime"]
+        design = champ["design"]
+    else:
+        rj = [r for r in rt.get("jev", []) if is_plain(r) and variant_of(r) == "six"]
+        real_src, design = None, "six"
     rb = [r for r in rt.get("baseline", []) if variant_of(r) == "six"]
     rj, rb = shared(rj, rb)
     seeds = sorted({r["seed"] for r in rj})
@@ -60,11 +70,15 @@ def payload():
         "live": None if not live else {"seed": live["seed"], "races": live["count"],
                                        "jev": slim(live["jev"]), "claude": slim(live["claude"])},
         "turn": {"jev": tb["jev"], "claude": tb["baseline"], "h2h": tb["head_to_head"]},
-        "real": {"jev": rtm["jev"], "claude": rtm["baseline"], "h2h": rtm["head_to_head"],
+        "real": {"jev": (real_src or rtm)["jev"], "claude": (real_src or rtm)["baseline"],
+                 "h2h": (real_src or rtm)["head_to_head"], "design": design,
+                 "seed_mean_jev": round(st.mean(sj.values()), 1), "seed_mean_claude": round(st.mean(sb.values()), 1),
                  "seeds": seeds, "score": [[x, sj[x], sb[x]] for x in seeds],
                  "decisions": [[x, dj[x], db[x]] for x in seeds]},
         "tax": s.get("latency_tax"),
+        "ctrl": {"jev": rtm["jev"], "claude": rtm["baseline"]},  # the control ran on the original design, seeds 1-5
         "ratios": s.get("ratios", {}),
+        "rt_ratio": round(st.mean(sj.values()) / st.mean(sb.values()), 2) if sb else None,
         "coach": [{"seed": r["seed"], "pick": r["coach"]["strategy"], "conf": r["coach"]["confidence"],
                    "ms": r["coach"].get("decision_ms"), "score": r["score"],
                    "memories": len(r["coach"].get("cortex_evidence_ids", []))} for r in coach],
@@ -213,7 +227,7 @@ footer{color:var(--ink3);font-size:15px}
 
   <section id="control-sec" hidden>
     <h2>The control: slow JEV down</h2>
-    <p class="note">Same JEV with a delay added to every answer so it is exactly as slow as Claude.</p>
+    <p class="note">Same JEV (original design, seeds 1–5) with a delay added to every answer so it is exactly as slow as Claude.</p>
     <div class="tbl"><table><thead><tr><th>Real time</th><th>Median time per answer</th><th>Games</th><th>Mean score</th></tr></thead><tbody id="control"></tbody></table></div>
     <p class="callout" id="control-note"></p>
   </section>
@@ -278,7 +292,7 @@ if (D.live) {
 
 // tiles
 const tiles = [
-  [`${R.realtime_score_ratio}×`, "real-time score vs Claude, same seeds"],
+  [`${D.rt_ratio}×`, `real-time score vs Claude, ${D.real.seeds.length} seeds`],
   [`${R.speedup_p50}×`, "faster per decision (median)"],
   [`${R.cost_per_decision_ratio}×`, "cheaper per decision"],
   [`${D.real.h2h.wins} / ${D.real.h2h.wins + D.real.h2h.ties + D.real.h2h.losses}`, "real-time seeds won"],
@@ -310,11 +324,12 @@ function chart(el, rows, unit) {
 chart($("c-lat"), [["median", D.turn.jev.latency_ms_p50, D.turn.claude.latency_ms_p50], ["p95", D.turn.jev.latency_ms_p95, D.turn.claude.latency_ms_p95]], " ms");
 chart($("c-dec"), D.real.decisions.map(([s, j, c]) => ["seed " + s, j, c]), "");
 chart($("c-score"), D.real.score.map(([s, j, c]) => ["seed " + s, j, c]), "");
-$("score-note").textContent = `Mean score per seed over every real-time game on that seed. JEV ${J.mean_score}, Claude ${C.mean_score}; JEV won ${D.real.h2h.wins} of ${D.real.h2h.wins + D.real.h2h.ties + D.real.h2h.losses} seeds.`;
+$("score-note").textContent = `Mean score per seed over every real-time game on that seed (JEV flying the tuned ${D.real.design} design). Average across seeds: JEV ${D.real.seed_mean_jev}, Claude ${D.real.seed_mean_claude}. JEV won ${D.real.h2h.wins} of ${D.real.h2h.wins + D.real.h2h.ties + D.real.h2h.losses} seeds.`;
 
 // control
 if (D.tax) {
   $("control-sec").hidden = false;
+  const J = D.ctrl.jev, C = D.ctrl.claude;
   $("control").innerHTML = `<tr><td class="win">JEV</td><td>${fmt(J.latency_ms_p50)} ms</td><td>${J.games}</td><td class="win">${J.mean_score}</td></tr>
     <tr><td>JEV slowed to Claude's speed</td><td>${fmt(D.tax.latency_ms_p50)} ms</td><td>${D.tax.games}</td><td>${D.tax.mean_score}</td></tr>
     <tr><td>Claude Haiku 4.5</td><td>${fmt(C.latency_ms_p50)} ms</td><td>${C.games}</td><td>${C.mean_score}</td></tr>`;

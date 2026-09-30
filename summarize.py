@@ -119,8 +119,13 @@ def build(path="results.json"):
     }
     if champ:
         cv = champ["variant"]
-        cj = [r for r in jev_all if r.get("phase") == "test" and variant_of(r) == cv]
-        crt = [r for r in rj_all if r.get("phase") == "test" and variant_of(r) == cv]
+        cp = champ.get("policy", "argmax")
+
+        def is_champ(r):
+            return (variant_of(r) == cv and r.get("policy", "argmax") == cp and r.get("phase") not in ("tune", "coach")
+                    and not r.get("latency_tax_ms") and not r.get("conf_threshold") and not r.get("coach"))
+        cj = [r for r in jev_all if is_champ(r)]
+        crt = [r for r in rj_all if is_champ(r)]
         cj_p, cb_p = shared(cj, base)
         crt_p, crb_p = shared(crt, rb)
         out["champion_test"] = {
@@ -195,11 +200,16 @@ def main():
                             ("realtime", "CHAMPION vs LLM, real-time, on the baseline's seeds")):
             c = ct[mode]
             if c["jev"] and c["baseline"]:
-                table(title, [["JEV champion", c["jev"]["games"], c["jev"]["seeds"], c["jev"]["mean_score"]],
-                              ["LLM baseline", c["baseline"]["games"], c["baseline"]["seeds"], c["baseline"]["mean_score"]]],
-                      ["decider", "games", "seeds", "mean score"])
+                table(title, [["JEV champion", c["jev"]["games"], len(set(c["jev"]["seeds"])), c["jev"]["mean_score"],
+                               c["jev"].get("decisions_per_game", "")],
+                              ["LLM baseline", c["baseline"]["games"], len(set(c["baseline"]["seeds"])),
+                               c["baseline"]["mean_score"], c["baseline"].get("decisions_per_game", "")]],
+                      ["decider", "games", "seeds", "mean score (all games)", "decisions per game"])
                 h = c["head_to_head"]
-                print(f"  head to head by seed: JEV {h['wins']} wins, {h['ties']} ties, {h['losses']} losses")
+                pj = st.mean(v[0] for v in h["per_seed"].values())
+                pb = st.mean(v[1] for v in h["per_seed"].values())
+                print(f"  per-seed means: JEV {pj:.1f} vs LLM {pb:.1f} ({pj / pb:.2f}x); "
+                      f"head to head by seed: JEV {h['wins']} wins, {h['ties']} ties, {h['losses']} losses")
     print(f"\nJEV is {ra.get('speedup_p50')}x faster per decision (median) and "
           f"{ra.get('cost_per_decision_ratio')}x cheaper per decision; "
           f"mean score {ra.get('score_ratio')}x turn-based, {ra.get('realtime_score_ratio')}x real-time.")
