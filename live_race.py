@@ -57,6 +57,7 @@ h1{font:700 clamp(22px,4vw,34px)/1.1 "JetBrains Mono",monospace;margin:0 0 4px;l
 .conf b{color:var(--fg);font-variant-numeric:tabular-nums}
 .cbar{flex:1 1 100%;height:6px;background:var(--line);border-radius:3px;overflow:hidden}.cbar i{display:block;height:100%;width:0;background:var(--warn);transition:width .1s}
 .foot{color:var(--dim);margin-top:16px;font-size:13px}
+.done{margin-top:10px;color:var(--warn)} .done a{color:var(--jev)} [hidden]{display:none!important}
 </style>
 <main>
 <h1>JEV vs Claude &mdash; live</h1>
@@ -65,6 +66,7 @@ h1{font:700 clamp(22px,4vw,34px)/1.1 "JetBrains Mono",monospace;margin:0 0 4px;l
 __PANELS__
 </div>
 <p class=foot>__FOOT__</p>
+<p class=done id=done hidden>Race over. The scoreboard with this race on top opens automatically; if it does not, open <a href="scoreboard.html">scoreboard.html</a>.</p>
 </main>
 <script>
 const P=__PLAYERS__;
@@ -84,6 +86,9 @@ async function poll(p){
     root.querySelector('.cbar i').style.width=(s.confidence==null?0:Math.round(100*s.confidence))+'%';
     root.querySelector('img').src=p.url+'frame.png?'+Date.now();
   }catch(e){root.querySelector('.status').textContent='connecting…'}
+  if (window.__over === undefined) window.__over = {};
+  try { if (root.querySelector('.status').textContent.startsWith('game over')) window.__over[p.id] = 1; } catch (e) {}
+  if (Object.keys(window.__over).length === P.length) document.getElementById('done').hidden = false;
   setTimeout(()=>poll(p),110);
 }
 P.forEach(poll);
@@ -236,6 +241,19 @@ def finish(a, done, where):
         if not a.no_record:
             record(done[kind], meta(kind), note, push=not a.no_push)
     print("\nRESULT:", note, flush=True)
+    if not a.no_record and not a.no_scoreboard:
+        try:
+            from scoreboard import render
+            page = render()
+            if not a.no_push:
+                subprocess.run(["git", "add", "scoreboard.html"], cwd=ROOT)
+                subprocess.run(["git", "commit", "-m", f"scoreboard: live race seed {a.seed}"], cwd=ROOT,
+                               capture_output=True)
+                subprocess.run(["git", "push"], cwd=ROOT, capture_output=True)
+            webbrowser.open(page.as_uri())
+            print(f"scoreboard updated with this race: {page}", flush=True)
+        except Exception as exc:  # noqa: BLE001 - the race is already recorded
+            print(f"(scoreboard not rebuilt: {exc})", flush=True)
 
 
 def main():
@@ -246,6 +264,7 @@ def main():
     ap.add_argument("--wait", action="store_true", help="set up the sandboxes, then wait for Enter before starting")
     ap.add_argument("--variant", default=None, help="JEV question design, e.g. champion")
     ap.add_argument("--hold", type=int, default=120, help="seconds to keep the views up after the race")
+    ap.add_argument("--no-scoreboard", action="store_true", help="do not rebuild and open scoreboard.html at the end")
     ap.add_argument("--no-push", action="store_true")
     ap.add_argument("--no-record", action="store_true")
     a = ap.parse_args()
