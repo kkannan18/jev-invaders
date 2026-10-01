@@ -4729,6 +4729,46 @@
         "live_race": true,
         "tenki_sandbox_id": "01a0f546-3bfa-7019-be18-8a659c3ced5a",
         "notes": "live race, each player in its own Tenki sandbox; seed 9; JEV 180 pts / 366 decisions vs Claude 15 pts / 26 decisions"
+      },
+      {
+        "seed": 9,
+        "score": 25,
+        "steps": 776,
+        "frames": 3103,
+        "lives_lost": 3,
+        "terminated": true,
+        "truncated": false,
+        "model_calls": 41,
+        "input_tokens": 54167,
+        "output_tokens": 2249,
+        "latency_ms_p50": 1050,
+        "latency_ms_p95": 1741,
+        "latency_ms_total": 50314,
+        "errors_by_status": {},
+        "retries": 0,
+        "fallback_actions": 0,
+        "wall_clock_s": 52.2,
+        "served_model": "claude-haiku-4-5",
+        "action_counts": {
+          "NOOP": 463,
+          "FIRE": 102,
+          "RIGHT": 42,
+          "LEFT": 103,
+          "RIGHTFIRE": 65,
+          "LEFTFIRE": 0
+        },
+        "mode": "realtime_15hz",
+        "conf_threshold": 0.0,
+        "policy": "argmax",
+        "latency_tax_ms": 0,
+        "variant": "six",
+        "mean_confidence": 0.849,
+        "low_conf_rate": 0.0,
+        "stale_steps": 734,
+        "cost_usd": 0.0654,
+        "live_race": true,
+        "tenki_sandbox_id": "01a0f547-840b-7b5a-bf98-ed7704ce6d80",
+        "notes": "live race, each player in its own Tenki sandbox; seed 9; JEV 135 pts / 248 decisions vs Claude 25 pts / 41 decisions"
       }
     ]
   }
